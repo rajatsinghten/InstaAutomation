@@ -14,5 +14,5 @@ def get_current_username(token: str = Depends(get_bearer_token)) -> str:
     return auth_service.get_username_from_token(token)
 
 
-def get_authenticated_loader(username: str = Depends(get_current_username)):
-    return auth_service.get_loader_for_username(username)
+def get_authenticated_client(username: str = Depends(get_current_username)):
+    return auth_service.get_client_for_username(username)
