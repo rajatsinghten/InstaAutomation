@@ -26,6 +26,7 @@ class AuthStatusResponse(BaseModel):
 
 class EngagementRequest(BaseModel):
     username: Optional[str] = Field(default=None, min_length=1, max_length=30)
+    use_guest: bool = Field(default=False)
 
 
 class EngagementResponse(BaseModel):

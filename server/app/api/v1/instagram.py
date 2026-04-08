@@ -42,7 +42,15 @@ async def calculate_engagement(
     current_username: str = Depends(get_current_username),
 ):
     target_username = (payload.username or current_username).strip()
-    return await _run_with_rate_limit(current_username, feature_service.calculate_engagement, client, target_username, current_username)
+    
+    # If use_guest is True, we use a fresh unauthenticated client instead of the user's client
+    effective_client = client
+    if payload.use_guest:
+        from instagrapi import Client
+        effective_client = Client()
+        effective_client.set_user_agent()
+        
+    return await _run_with_rate_limit(current_username, feature_service.calculate_engagement, effective_client, target_username, current_username)
 
 
 @router.post("/followers/export", response_model=FollowersExportResponse)
