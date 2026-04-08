@@ -1,0 +1,250 @@
+.app-shell {
+  position: relative;
+  overflow: hidden;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 44px 24px 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+
+  @media (max-width: 800px) {
+    padding: 24px 14px 44px;
+    gap: 16px;
+  }
+}
+
+.app-bg {
+  position: absolute;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.6;
+}
+
+.app-bg-a {
+  background: #6dd4b1;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  top: -120px;
+  left: -90px;
+}
+
+.app-bg-b {
+  background: #f5a86b;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  bottom: -130px;
+  right: -110px;
+}
+
+.hero {
+  display: grid;
+  gap: 10px;
+  background: linear-gradient(135deg, #12353d, #0e232f 52%, #173f48);
+  color: #edf6f2;
+  border-radius: 18px;
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18px 40px rgba(7, 17, 26, 0.28);
+
+  h1 {
+    margin: 0;
+    font-size: clamp(30px, 6vw, 44px);
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+
+  @media (max-width: 800px) {
+    padding: 18px;
+  }
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.subtitle {
+  margin: 0;
+  color: #cae4db;
+  max-width: 760px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(12, 28, 29, 0.06);
+
+  h2 {
+    margin: 0 0 12px;
+    font-size: 22px;
+  }
+
+  @media (max-width: 800px) {
+    padding: 16px;
+  }
+}
+
+.auth-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.chip {
+  background: #f4ead7;
+  color: #553f20;
+  font-size: 12px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  border: 1px solid #e8d8b8;
+}
+
+.chip.success {
+  background: #e3f6ec;
+  color: #1e5a42;
+  border-color: #bde7d2;
+}
+
+.grid-form {
+  display: grid;
+  gap: 12px;
+}
+
+.grid-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.grid-form input,
+.grid-form select {
+  border: 1px solid #cfddd8;
+  border-radius: 10px;
+  padding: 11px 12px;
+  font: 500 14px/1.3 var(--font-body);
+  color: var(--text);
+  background: #fff;
+}
+
+.grid-form input:focus,
+.grid-form select:focus {
+  outline: 2px solid rgba(45, 156, 135, 0.35);
+  border-color: #2d9c87;
+}
+
+.actions-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font: 600 14px/1 var(--font-body);
+  background: linear-gradient(135deg, #1c7f6c, #2f9c8f);
+  color: #effcf8;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+button.ghost {
+  background: #f7f4ee;
+  color: #193438;
+  border: 1px solid #d9d5cb;
+}
+
+.meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.alerts {
+  display: grid;
+  gap: 10px;
+}
+
+.notice,
+.error {
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+}
+
+.notice {
+  border: 1px solid #b9e0d3;
+  background: #e8f8f2;
+  color: #225649;
+}
+
+.error {
+  border: 1px solid #f2c1b9;
+  background: #ffe9e3;
+  color: #8d2f1f;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.result-box {
+  margin-top: 12px;
+  border-radius: 12px;
+  border: 1px dashed #b9ccc6;
+  background: #f7fbfa;
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    word-break: break-word;
+  }
+}
+
+.download-link {
+  width: fit-content;
+  text-decoration: none;
+  border-radius: 8px;
+  background: #0f4d58;
+  color: #f6fffb;
+  padding: 9px 12px;
+  font-weight: 600;
+  font-size: 13px;
+}
