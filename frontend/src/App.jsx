@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
 const TOKEN_KEY = 'instaloader_api_token'
 
 function getErrorMessage(data, fallback = 'Request failed') {
@@ -250,9 +250,6 @@ function App() {
 
   return (
     <main className="app-shell">
-      <div className="app-bg app-bg-a"></div>
-      <div className="app-bg app-bg-b"></div>
-
       <header className="hero">
         <p className="eyebrow">Instagram Automation Dashboard</p>
         <h1>Insta Ops Console</h1>
