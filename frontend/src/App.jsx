@@ -91,6 +91,17 @@ function App() {
   const isAuthenticated = Boolean(token)
   const mediaUrl = useMemo(() => toAbsoluteApiUrl(postResult?.media_url || ''), [postResult])
   const sourceMediaUrl = useMemo(() => toAbsoluteApiUrl(postResult?.source_media_url || ''), [postResult])
+  const summaryCards = useMemo(() => {
+    if (!analysisResult) return []
+    return [
+      { label: 'Followers', value: analysisResult.total_followers },
+      { label: 'Following', value: analysisResult.total_following },
+      { label: 'Unfollowers', value: analysisResult.unfollowers },
+      { label: 'Not Following Back', value: analysisResult.not_following_back },
+      { label: 'Mutual', value: analysisResult.mutual_followers },
+      { label: 'Rate', value: `${analysisResult.engagement_rate}%` },
+    ]
+  }, [analysisResult])
 
   useEffect(() => {
     if (!token) {
@@ -246,9 +257,16 @@ function App() {
         <p className="eyebrow">Instagram Automation Dashboard</p>
         <h1>Insta Ops Console</h1>
         <p className="subtitle">Login once and run follower analysis and post download tasks from one clean dashboard.</p>
+        <div className="hero-meta">
+          <span className={`hero-chip ${isAuthenticated ? 'success' : ''}`}>
+            {isAuthenticated ? 'Session Active' : 'Session Inactive'}
+          </span>
+          <span className="hero-chip">API: {API_BASE_URL}</span>
+          {activeUser && <span className="hero-chip">User: {activeUser}</span>}
+        </div>
       </header>
 
-      <section className="panel auth-panel">
+      <section className="panel auth-panel panel-auth">
         <div className="panel-head">
           <h2>Authentication</h2>
           {isAuthenticated ? <span className="chip success">Connected</span> : <span className="chip">Not Logged In</span>}
@@ -292,7 +310,7 @@ function App() {
       )}
 
       <section className="tool-grid">
-        <article className="panel">
+        <article className="panel panel-followers">
           <h2>Follower Analysis</h2>
           <div className="grid-form">
             <label className="inline-check">
@@ -342,7 +360,7 @@ function App() {
           )}
         </article>
 
-        <article className="panel">
+        <article className="panel panel-summary">
           <h2>Summary Stats</h2>
           <div className="grid-form">
             <button type="button" disabled={!isAuthenticated || busyAction === 'summary'} onClick={loadAnalysisSummary}>
@@ -352,13 +370,13 @@ function App() {
 
           {analysisResult && (
             <div className="result-box">
-              <div className="stats-grid">
-                <p><strong>Total Followers:</strong> {analysisResult.total_followers}</p>
-                <p><strong>Total Following:</strong> {analysisResult.total_following}</p>
-                <p><strong>Unfollowers:</strong> {analysisResult.unfollowers}</p>
-                <p><strong>Not Following Back:</strong> {analysisResult.not_following_back}</p>
-                <p><strong>Mutual Followers:</strong> {analysisResult.mutual_followers}</p>
-                <p><strong>Engagement Rate:</strong> {analysisResult.engagement_rate}%</p>
+              <div className="stats-grid cards">
+                {summaryCards.map((item) => (
+                  <div className="stat-card" key={item.label}>
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </div>
+                ))}
               </div>
               <p>
                 <strong>Fetched At:</strong> {formatDate(analysisResult.fetched_at)}
@@ -367,7 +385,7 @@ function App() {
           )}
         </article>
 
-        <article className="panel">
+        <article className="panel panel-download">
           <h2>Post / Reel Download</h2>
           <form className="grid-form" onSubmit={submitPostDownload}>
             <label>

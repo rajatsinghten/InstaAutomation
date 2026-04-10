@@ -1,19 +1,25 @@
-# instagram-automation
+# Instagram Automation
 
-Instagram automation app with:
+Instagram automation dashboard with:
 
-- FastAPI backend in `server/`
-- React frontend in `frontend/`
+- FastAPI backend in server
+- React + Vite frontend in frontend
 
-Legacy root Python scripts were removed. The root `.venv` was also removed.
+## Project Layout
+
+Important backend runtime files are intentionally inside server:
+
+- Virtual environment: server/.venv
+- Python dependencies: server/requirements.txt
+- SQLite database: server/instagram.db
 
 ## Prerequisites
 
-- Python 3.9+
-- Node.js 18+
+- Python 3.9 or newer
+- Node.js 18 or newer
 - npm
 
-## 1. Backend Setup (FastAPI)
+## Backend Setup
 
 From project root:
 
@@ -25,19 +31,18 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Start backend:
+Start the backend from project root:
 
 ```bash
-cd /Users/rajat/Developer/Projects/Instaloader
-server/.venv/bin/python -m uvicorn server.app.main:app --reload
+server/.venv/bin/python -m uvicorn app.main:app --app-dir server --reload
 ```
 
 Backend URLs:
 
-- API base: `http://127.0.0.1:8000/api/v1`
-- Swagger: `http://127.0.0.1:8000/docs`
+- API base: http://127.0.0.1:8000/api/v1
+- Swagger docs: http://127.0.0.1:8000/docs
 
-## 2. Frontend Setup (React + Vite)
+## Frontend Setup
 
 From project root:
 
@@ -45,51 +50,49 @@ From project root:
 cd frontend
 npm install
 cp .env.example .env
-```
-
-Run frontend:
-
-```bash
 npm run dev
 ```
 
 Frontend URL:
 
-- `http://localhost:5173`
+- http://localhost:5173
 
-## 3. Run Both Together
+## Run Full Stack
 
-Use two terminals.
+Use two terminals from project root.
 
 Terminal 1 (backend):
 
 ```bash
-cd /Users/rajat/Developer/Projects/Instaloader
-server/.venv/bin/python -m uvicorn server.app.main:app --reload
+server/.venv/bin/python -m uvicorn app.main:app --app-dir server --reload
 ```
 
 Terminal 2 (frontend):
 
 ```bash
-cd /Users/rajat/Developer/Projects/Instaloader/frontend
+cd frontend
 npm run dev
 ```
 
-## 4. Backend Test Command
+## Test Backend
 
-Always run tests with backend venv:
+Run tests with the backend virtual environment:
 
 ```bash
-cd /Users/rajat/Developer/Projects/Instaloader
 server/.venv/bin/python -m pytest server/tests -q
 ```
 
 ## Main API Endpoints
 
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/logout`
-- `GET /api/v1/auth/status`
-- `POST /api/v1/engagement/calculate`
-- `POST /api/v1/followers/export`
-- `POST /api/v1/posts/download`
-- `POST /api/v1/profile/picture`
+- POST /api/v1/auth/login
+- POST /api/v1/auth/logout
+- GET /api/v1/auth/status
+- GET /api/v1/followers/list
+- GET /api/v1/followers/unfollowers
+- GET /api/v1/followers/not-following
+- GET /api/v1/followers/mutual
+- GET /api/v1/followers/stats
+- GET /api/v1/analysis/summary
+- POST /api/v1/posts/download
+- GET /api/v1/health/
+- GET /api/v1/health/ready
