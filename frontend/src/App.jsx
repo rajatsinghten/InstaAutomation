@@ -258,7 +258,6 @@ function App() {
           <span className={`hero-chip ${isAuthenticated ? 'success' : ''}`}>
             {isAuthenticated ? 'Session Active' : 'Session Inactive'}
           </span>
-          <span className="hero-chip">API: {API_BASE_URL}</span>
           {activeUser && <span className="hero-chip">User: {activeUser}</span>}
         </div>
       </header>

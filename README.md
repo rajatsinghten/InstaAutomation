@@ -31,10 +31,12 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Start the backend from project root:
+Start the backend from the server directory (so the database creates there):
 
 ```bash
-server/.venv/bin/python -m uvicorn app.main:app --app-dir server --reload
+cd server
+source .venv/bin/activate
+uvicorn app.main:app --reload
 ```
 
 Backend URLs:
@@ -64,7 +66,9 @@ Use two terminals from project root.
 Terminal 1 (backend):
 
 ```bash
-server/.venv/bin/python -m uvicorn app.main:app --app-dir server --reload
+cd server
+source .venv/bin/activate
+uvicorn app.main:app --reload
 ```
 
 Terminal 2 (frontend):
@@ -76,10 +80,11 @@ npm run dev
 
 ## Test Backend
 
-Run tests with the backend virtual environment:
+Run tests from the server directory:
 
 ```bash
-server/.venv/bin/python -m pytest server/tests -q
+cd server
+pytest tests -q
 ```
 
 ## Main API Endpoints
