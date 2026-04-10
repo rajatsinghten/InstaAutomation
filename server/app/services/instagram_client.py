@@ -33,11 +33,13 @@ class InstagramClient:
         password: str,
         headless: bool = True,
         use_real_login: bool = True,
+        otp_code: str | None = None,
     ):
         self.username = username
         self._password = password
         self.headless = headless
         self.use_real_login = use_real_login and not username.startswith("demo")
+        self._otp_code = otp_code
         self._logged_in = False
         self._client = None
         self._user_id = None
@@ -136,7 +138,21 @@ class InstagramClient:
 
     def _login_with_instagrapi(self) -> None:
         client = Client()
-        success = client.login(self.username, self._password)
+        try:
+            success = client.login(self.username, self._password)
+        except ChallengeRequired:
+            # 2FA is required, attempt to use OTP code if provided
+            if not self._otp_code:
+                raise InstagramAuthError(
+                    "Two-factor authentication required: Please provide OTP code"
+                )
+            try:
+                # Handle 2FA verification with OTP code
+                client.challenge_resolve(self._otp_code)
+                success = True
+            except Exception as exc:
+                raise InstagramAuthError(f"2FA verification failed: {exc}") from exc
+        
         if not success:
             raise InstagramAuthError("Instagram login did not return success")
         self._client = client

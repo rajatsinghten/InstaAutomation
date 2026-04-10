@@ -1,24 +1,55 @@
-from fastapi import APIRouter, Depends
-from fastapi.concurrency import run_in_threadpool
+from fastapi import APIRouter, Depends, Request
 
-from ..deps import get_bearer_token
-from ...models.schemas import AccessTokenResponse, AuthStatusResponse, LoginRequest, MessageResponse
-from ...services import auth_service
+from app.middleware.auth_middleware import get_session_id_from_payload, get_token_payload
+from app.middleware.rate_limit import limiter
+from app.models.schemas import (
+    LoginRequest,
+    LoginResponse,
+    LogoutResponse,
+    SessionStatusResponse,
+)
 
-router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-@router.post("/login", response_model=AccessTokenResponse)
-async def login(payload: LoginRequest):
-    return await run_in_threadpool(auth_service.login_user, payload.username, payload.password, payload.two_factor_code)
-
-
-@router.post("/logout", response_model=MessageResponse)
-async def logout(token: str = Depends(get_bearer_token)):
-    return await run_in_threadpool(auth_service.logout_token, token)
+router = APIRouter()
 
 
-@router.get("/status", response_model=AuthStatusResponse)
-async def status(token: str = Depends(get_bearer_token)):
-    username = await run_in_threadpool(auth_service.get_username_from_token, token)
-    return {"is_authenticated": True, "username": username}
+@router.post("/login", response_model=LoginResponse)
+@limiter.limit("20/minute")
+async def login(request: Request, payload: LoginRequest) -> LoginResponse:
+
+    auth_service = request.app.state.auth_service
+    token, session_id, expires_at = await auth_service.login(
+        username=payload.username,
+        password=payload.password,
+        otp_code=payload.otp_code,
+    )
+    return LoginResponse(
+        access_token=token,
+        token_type="bearer",
+        session_id=session_id,
+        expires_at=expires_at,
+    )
+
+
+@router.post("/logout", response_model=LogoutResponse)
+async def logout(request: Request, token_payload: dict = Depends(get_token_payload)) -> LogoutResponse:
+    auth_service = request.app.state.auth_service
+    session_id = get_session_id_from_payload(token_payload)
+    await auth_service.logout(session_id)
+    return LogoutResponse(success=True, message="Logged out successfully")
+
+
+@router.get("/status", response_model=SessionStatusResponse)
+async def session_status(
+    request: Request,
+    token_payload: dict = Depends(get_token_payload),
+) -> SessionStatusResponse:
+    session_id = get_session_id_from_payload(token_payload)
+    session_manager = request.app.state.session_manager
+    session = await session_manager.get_session(session_id)
+
+    return SessionStatusResponse(
+        authenticated=True,
+        username=session.username,
+        session_id=session.session_id,
+        expires_at=session.expires_at,
+    )
