@@ -56,32 +56,41 @@ async function apiRequest(path, { method = 'GET', token, body } = {}) {
   return payload
 }
 
+function formatDate(value) {
+  if (!value) return '-'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleString()
+}
+
+function pickFollowerArray(payload) {
+  if (Array.isArray(payload.followers)) return payload.followers
+  if (Array.isArray(payload.unfollowers)) return payload.unfollowers
+  if (Array.isArray(payload.not_following_back)) return payload.not_following_back
+  if (Array.isArray(payload.mutual_followers)) return payload.mutual_followers
+  return []
+}
+
 function App() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [twoFactorCode, setTwoFactorCode] = useState('')
+  const [otpCode, setOtpCode] = useState('')
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY) || '')
   const [activeUser, setActiveUser] = useState('')
   const [busyAction, setBusyAction] = useState('')
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
 
-  const [engagementUsername, setEngagementUsername] = useState('')
-  const [followersUsername, setFollowersUsername] = useState('')
-  const [followersFormat, setFollowersFormat] = useState('txt')
+  const [refreshData, setRefreshData] = useState(false)
   const [postUrl, setPostUrl] = useState('')
-  const [profileUsername, setProfileUsername] = useState('')
 
-  const [engagementResult, setEngagementResult] = useState(null)
   const [followersResult, setFollowersResult] = useState(null)
+  const [analysisResult, setAnalysisResult] = useState(null)
   const [postResult, setPostResult] = useState(null)
-  const [profileResult, setProfileResult] = useState(null)
 
   const isAuthenticated = Boolean(token)
-  const exportFileUrl = useMemo(() => {
-    if (!followersResult?.file_url) return ''
-    return toAbsoluteApiUrl(followersResult.file_url)
-  }, [followersResult])
+  const mediaUrl = useMemo(() => toAbsoluteApiUrl(postResult?.media_url || ''), [postResult])
+  const sourceMediaUrl = useMemo(() => toAbsoluteApiUrl(postResult?.source_media_url || ''), [postResult])
 
   useEffect(() => {
     if (!token) {
@@ -115,13 +124,6 @@ function App() {
     }
   }, [token])
 
-  useEffect(() => {
-    if (!activeUser) return
-    setEngagementUsername((value) => value || activeUser)
-    setFollowersUsername((value) => value || activeUser)
-    setProfileUsername((value) => value || activeUser)
-  }, [activeUser])
-
   const clearMessages = () => {
     setNotice('')
     setError('')
@@ -136,7 +138,7 @@ function App() {
       const payload = {
         username,
         password,
-        two_factor_code: twoFactorCode || null,
+        otp_code: otpCode || null,
       }
       const data = await apiRequest('/auth/login', {
         method: 'POST',
@@ -146,7 +148,7 @@ function App() {
       localStorage.setItem(TOKEN_KEY, data.access_token)
       setToken(data.access_token)
       setPassword('')
-      setTwoFactorCode('')
+      setOtpCode('')
       setNotice('Login successful. You can now run Instagram actions.')
     } catch (requestError) {
       setError(requestError.message)
@@ -170,6 +172,9 @@ function App() {
       localStorage.removeItem(TOKEN_KEY)
       setToken('')
       setActiveUser('')
+      setFollowersResult(null)
+      setAnalysisResult(null)
+      setPostResult(null)
       setBusyAction('')
       setNotice('Logged out successfully.')
     }
@@ -187,44 +192,27 @@ function App() {
     }
   }
 
-  const submitEngagement = async (event) => {
-    event.preventDefault()
-    const targetUsername = (engagementUsername || activeUser).trim()
-    if (!targetUsername) {
-      setError('Enter a profile username for engagement.')
-      return
-    }
+  const querySuffix = refreshData ? '?refresh=true' : ''
 
-    await runProtectedAction('engagement', async () => {
-      const data = await apiRequest('/engagement/calculate', {
-        method: 'POST',
-        token,
-        body: { username: targetUsername },
+  const loadFollowerSet = async (key, path, title) => {
+    await runProtectedAction(key, async () => {
+      const payload = await apiRequest(`${path}${querySuffix}`, { token })
+      const users = pickFollowerArray(payload)
+      setFollowersResult({
+        title,
+        users,
+        total_count: payload.total_count ?? users.length,
+        fetched_at: payload.fetched_at,
       })
-      setEngagementResult(data)
-      setNotice('Engagement score generated.')
+      setNotice(`${title} loaded successfully.`)
     })
   }
 
-  const submitFollowers = async (event) => {
-    event.preventDefault()
-    const targetUsername = (followersUsername || activeUser).trim()
-    if (!targetUsername) {
-      setError('Enter a profile username for followers export.')
-      return
-    }
-
-    await runProtectedAction('followers', async () => {
-      const data = await apiRequest('/followers/export', {
-        method: 'POST',
-        token,
-        body: {
-          username: targetUsername,
-          output_format: followersFormat,
-        },
-      })
-      setFollowersResult(data)
-      setNotice('Followers export generated.')
+  const loadAnalysisSummary = async () => {
+    await runProtectedAction('summary', async () => {
+      const payload = await apiRequest(`/analysis/summary${querySuffix}`, { token })
+      setAnalysisResult(payload)
+      setNotice('Analysis summary updated.')
     })
   }
 
@@ -243,28 +231,11 @@ function App() {
         body: { url: normalizedUrl },
       })
       setPostResult(data)
-      setNotice('Post download started and saved on backend.')
+      setNotice('Media downloaded successfully.')
     })
   }
 
-  const submitProfilePicture = async (event) => {
-    event.preventDefault()
-    const targetUsername = (profileUsername || activeUser).trim()
-    if (!targetUsername) {
-      setError('Enter a profile username for profile picture download.')
-      return
-    }
-
-    await runProtectedAction('profile', async () => {
-      const data = await apiRequest('/profile/picture', {
-        method: 'POST',
-        token,
-        body: { username: targetUsername },
-      })
-      setProfileResult(data)
-      setNotice('Profile picture download completed.')
-    })
-  }
+  const previewUsers = followersResult?.users?.slice(0, 12) || []
 
   return (
     <main className="app-shell">
@@ -274,7 +245,7 @@ function App() {
       <header className="hero">
         <p className="eyebrow">Instagram Automation Dashboard</p>
         <h1>Insta Ops Console</h1>
-        <p className="subtitle">Login once and run engagement checks, exports, and download tasks from one clean dashboard.</p>
+        <p className="subtitle">Login once and run follower analysis and post download tasks from one clean dashboard.</p>
       </header>
 
       <section className="panel auth-panel">
@@ -294,7 +265,7 @@ function App() {
           </label>
           <label>
             2FA Code (optional)
-            <input value={twoFactorCode} onChange={(event) => setTwoFactorCode(event.target.value)} placeholder="123456" />
+            <input value={otpCode} onChange={(event) => setOtpCode(event.target.value)} placeholder="123456" />
           </label>
           <div className="actions-row">
             <button type="submit" disabled={busyAction === 'login'}>
@@ -322,76 +293,76 @@ function App() {
 
       <section className="tool-grid">
         <article className="panel">
-          <h2>Engagement Score</h2>
-          <form className="grid-form" onSubmit={submitEngagement}>
-            <label>
-              Profile Username
-              <input value={engagementUsername} onChange={(event) => setEngagementUsername(event.target.value)} required placeholder="target profile" />
+          <h2>Follower Analysis</h2>
+          <div className="grid-form">
+            <label className="inline-check">
+              <input type="checkbox" checked={refreshData} onChange={(event) => setRefreshData(event.target.checked)} />
+              Force refresh (ignore cache)
             </label>
-            <button type="submit" disabled={!isAuthenticated || busyAction === 'engagement'}>
-              {busyAction === 'engagement' ? 'Calculating...' : 'Calculate'}
-            </button>
-          </form>
+            <div className="actions-row wrap">
+              <button type="button" onClick={() => loadFollowerSet('followers-list', '/followers/list', 'Followers')} disabled={!isAuthenticated || busyAction === 'followers-list'}>
+                {busyAction === 'followers-list' ? 'Loading...' : 'Followers'}
+              </button>
+              <button type="button" onClick={() => loadFollowerSet('unfollowers', '/followers/unfollowers', 'Unfollowers')} disabled={!isAuthenticated || busyAction === 'unfollowers'}>
+                {busyAction === 'unfollowers' ? 'Loading...' : 'Unfollowers'}
+              </button>
+              <button type="button" onClick={() => loadFollowerSet('not-following', '/followers/not-following', 'Not Following Back')} disabled={!isAuthenticated || busyAction === 'not-following'}>
+                {busyAction === 'not-following' ? 'Loading...' : 'Not Following Back'}
+              </button>
+              <button type="button" onClick={() => loadFollowerSet('mutual', '/followers/mutual', 'Mutual Followers')} disabled={!isAuthenticated || busyAction === 'mutual'}>
+                {busyAction === 'mutual' ? 'Loading...' : 'Mutual'}
+              </button>
+            </div>
+          </div>
 
-          {engagementResult && (
+          {followersResult && (
             <div className="result-box">
               <p>
-                <strong>User:</strong> {engagementResult.username}
+                <strong>Type:</strong> {followersResult.title}
               </p>
               <p>
-                <strong>Followers:</strong> {engagementResult.followers}
+                <strong>Total:</strong> {followersResult.total_count}
               </p>
               <p>
-                <strong>Posts:</strong> {engagementResult.total_posts}
+                <strong>Fetched At:</strong> {formatDate(followersResult.fetched_at)}
               </p>
-              <p>
-                <strong>Total Likes:</strong> {engagementResult.total_likes}
-              </p>
-              <p>
-                <strong>Total Comments:</strong> {engagementResult.total_comments}
-              </p>
-              <p>
-                <strong>Rate:</strong> {engagementResult.engagement_rate}%
-              </p>
+              <div className="result-list">
+                <strong>Preview:</strong>
+                {previewUsers.length === 0 ? (
+                  <p>No users found for this category.</p>
+                ) : (
+                  <ul>
+                    {previewUsers.map((user) => (
+                      <li key={user.username}>{user.username}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           )}
         </article>
 
         <article className="panel">
-          <h2>Followers Export</h2>
-          <form className="grid-form" onSubmit={submitFollowers}>
-            <label>
-              Profile Username
-              <input value={followersUsername} onChange={(event) => setFollowersUsername(event.target.value)} required placeholder="target profile" />
-            </label>
-            <label>
-              Export Format
-              <select value={followersFormat} onChange={(event) => setFollowersFormat(event.target.value)}>
-                <option value="txt">TXT</option>
-                <option value="json">JSON</option>
-              </select>
-            </label>
-            <button type="submit" disabled={!isAuthenticated || busyAction === 'followers'}>
-              {busyAction === 'followers' ? 'Exporting...' : 'Export Followers'}
+          <h2>Summary Stats</h2>
+          <div className="grid-form">
+            <button type="button" disabled={!isAuthenticated || busyAction === 'summary'} onClick={loadAnalysisSummary}>
+              {busyAction === 'summary' ? 'Loading...' : 'Load Summary'}
             </button>
-          </form>
+          </div>
 
-          {followersResult && (
+          {analysisResult && (
             <div className="result-box">
+              <div className="stats-grid">
+                <p><strong>Total Followers:</strong> {analysisResult.total_followers}</p>
+                <p><strong>Total Following:</strong> {analysisResult.total_following}</p>
+                <p><strong>Unfollowers:</strong> {analysisResult.unfollowers}</p>
+                <p><strong>Not Following Back:</strong> {analysisResult.not_following_back}</p>
+                <p><strong>Mutual Followers:</strong> {analysisResult.mutual_followers}</p>
+                <p><strong>Engagement Rate:</strong> {analysisResult.engagement_rate}%</p>
+              </div>
               <p>
-                <strong>User:</strong> {followersResult.username}
+                <strong>Fetched At:</strong> {formatDate(analysisResult.fetched_at)}
               </p>
-              <p>
-                <strong>Count:</strong> {followersResult.count}
-              </p>
-              <p>
-                <strong>File:</strong> {followersResult.file_name}
-              </p>
-              {exportFileUrl && (
-                <a href={exportFileUrl} target="_blank" rel="noreferrer" className="download-link">
-                  Download Export File
-                </a>
-              )}
             </div>
           )}
         </article>
@@ -414,35 +385,26 @@ function App() {
                 <strong>Shortcode:</strong> {postResult.shortcode}
               </p>
               <p>
-                <strong>Owner:</strong> {postResult.owner_username}
+                <strong>Media Type:</strong> {postResult.media_type}
               </p>
               <p>
-                <strong>Saved To:</strong> {postResult.output_folder}
+                <strong>Downloaded At:</strong> {formatDate(postResult.downloaded_at)}
               </p>
-            </div>
-          )}
-        </article>
-
-        <article className="panel">
-          <h2>Profile Picture</h2>
-          <form className="grid-form" onSubmit={submitProfilePicture}>
-            <label>
-              Profile Username
-              <input value={profileUsername} onChange={(event) => setProfileUsername(event.target.value)} required placeholder="target profile" />
-            </label>
-            <button type="submit" disabled={!isAuthenticated || busyAction === 'profile'}>
-              {busyAction === 'profile' ? 'Downloading...' : 'Download Picture'}
-            </button>
-          </form>
-
-          {profileResult && (
-            <div className="result-box">
-              <p>
-                <strong>User:</strong> {profileResult.username}
-              </p>
-              <p>
-                <strong>Saved To:</strong> {profileResult.output_folder}
-              </p>
+              {postResult.caption && (
+                <p>
+                  <strong>Caption:</strong> {postResult.caption}
+                </p>
+              )}
+              {mediaUrl && (
+                <a href={mediaUrl} target="_blank" rel="noreferrer" className="download-link">
+                  Download Media File
+                </a>
+              )}
+              {sourceMediaUrl && sourceMediaUrl !== mediaUrl && (
+                <a href={sourceMediaUrl} target="_blank" rel="noreferrer" className="download-link secondary-link">
+                  Open Source Media URL
+                </a>
+              )}
             </div>
           )}
         </article>

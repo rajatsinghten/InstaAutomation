@@ -155,6 +155,18 @@
   flex-wrap: wrap;
 }
 
+.inline-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.inline-check input {
+  width: 16px;
+  height: 16px;
+}
+
 button {
   border: 0;
   border-radius: 10px;
@@ -238,6 +250,23 @@ button.ghost {
   }
 }
 
+.result-list {
+  display: grid;
+  gap: 6px;
+}
+
+.result-list ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.stats-grid {
+  display: grid;
+  gap: 6px;
+}
+
 .download-link {
   width: fit-content;
   text-decoration: none;
@@ -247,4 +276,10 @@ button.ghost {
   padding: 9px 12px;
   font-weight: 600;
   font-size: 13px;
+}
+
+.secondary-link {
+  background: #f6fffb;
+  color: #0f4d58;
+  border: 1px solid #0f4d58;
 }

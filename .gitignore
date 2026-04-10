@@ -3,5 +3,10 @@ __pycache__/
 *.pyo
 *.pyd
 .pytest_cache/
+server/.venv/
+server/.pytest_cache/
+server/instagram.db
+server/*.db
+server/downloads/
 server/.env
 frontend/.env
