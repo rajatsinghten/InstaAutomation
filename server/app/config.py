@@ -20,9 +20,13 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440
 
-    frontend_url: str = "http://localhost:3000"
+    frontend_url: str = "https://insta-automation-six.vercel.app"
     cors_origins: list[str] = Field(
-        default_factory=lambda: ["http://localhost:3000", "http://localhost:5173"]
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "https://insta-automation-six.vercel.app"
+        ]
     )
 
     rate_limit_requests: int = 100
